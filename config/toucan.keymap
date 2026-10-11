@@ -4,79 +4,267 @@
 #include <dt-bindings/zmk/outputs.h>
 #include <dt-bindings/zmk/pointing.h>
 
-#define BASE 0
-#define NAV  1
-#define SYM  2
-#define ADJ  3
+/*
+ * Key positions (42 keys):
+ *   0  1  2  3  4  5      6  7  8  9 10 11
+ *  12 13 14 15 16 17     18 19 20 21 22 23
+ *  24 25 26 27 28 29     30 31 32 33 34 35
+ *           36 37 38     39 40 41
+ */
+#define KEYS_L 0 1 2 3 4 5 12 13 14 15 16 17 24 25 26 27 28 29
+#define KEYS_R 6 7 8 9 10 11 18 19 20 21 22 23 30 31 32 33 34 35
+#define THUMBS 36 37 38 39 40 41
 
 / {
-    conditional_layers {
-        compatible = "zmk,conditional-layers";
-        tri_layer {
-            if-layers = <1 2>;
-            then-layer = <3>;
+    behaviors {
+        /* Left-hand home row mods: only become a modifier when the
+           other key is on the right hand or a thumb. */
+        hml: home_row_mod_left {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            flavor = "balanced";
+            tapping-term-ms = <280>;
+            quick-tap-ms = <175>;
+            require-prior-idle-ms = <150>;
+            bindings = <&kp>, <&kp>;
+            hold-trigger-key-positions = <KEYS_R THUMBS>;
+            hold-trigger-on-release;
+        };
+
+        /* Right-hand home row mods: mirror of the above. */
+        hmr: home_row_mod_right {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            flavor = "balanced";
+            tapping-term-ms = <280>;
+            quick-tap-ms = <175>;
+            require-prior-idle-ms = <150>;
+            bindings = <&kp>, <&kp>;
+            hold-trigger-key-positions = <KEYS_L THUMBS>;
+            hold-trigger-on-release;
         };
     };
 
     keymap {
         compatible = "zmk,keymap";
 
+        /* Layer 0 */
         base {
-            display-name = "BASE";
+            display-name = "base";
+
+            /* QWERTY with home row mods */
             bindings = <
-                &kp TAB   &kp Q &kp W &kp E &kp R &kp T   &kp Y &kp U  &kp I     &kp O   &kp P    &kp BSPC
-                &kp LCTRL &kp A &kp S &kp D &kp F &kp G   &kp H &kp J  &kp K     &kp L   &kp SEMI &kp SQT
-                &kp LSHFT &kp Z &kp X &kp C &kp V &kp B   &kp N &kp M  &kp COMMA &kp DOT &kp FSLH &kp ESC
-                                &kp LGUI &mo 1 &kp SPACE   &kp RET &mo 2 &kp RALT
+                /* Top row left */
+                &none &kp Q &kp W &kp E &kp R &kp T
+
+                /* Top row right */
+                &kp Y &kp U &kp I &kp O &kp P &none
+
+                /* Home row left */
+                &none &hml LGUI A &hml LALT S &hml LCTRL D &hml LSHFT F &kp G
+
+                /* Home row right */
+                &kp H &hmr RSHFT J &hmr RCTRL K &hmr RALT L &hmr RGUI SQT &none
+
+                /* Bottom row left */
+                &none &kp Z &kp X &kp C &kp V &kp B
+
+                /* Bottom row right */
+                &kp N &kp M &kp COMMA &kp DOT &kp FSLH &none
+
+                /* Thumb row left */
+                &lt 3 DEL &lt 1 BSPC &lt 2 ESC
+
+                /* Thumb row right */
+                &lt 5 RET &lt 4 SPACE &lt 6 TAB
             >;
         };
 
+        /* Layer 1 */
         nav {
-            display-name = "NAV";
+            display-name = "nav";
+
+            /* like Miryoku, but column rotated to match Vim movement hjkl */
             bindings = <
-                &kp TAB     &kp N1          &kp N2       &kp N3       &kp N4       &kp N5         &kp N6   &kp N7   &kp N8 &kp N9    &kp N0 &kp BSPC
-                &bt BT_CLR  &bt BT_SEL 0    &bt BT_SEL 1 &bt BT_SEL 2 &bt BT_SEL 3 &bt BT_SEL 4   &kp LEFT &kp DOWN &kp UP &kp RIGHT &trans &trans
-                &kp LSHFT   &studio_unlock  &trans       &trans       &trans       &trans         &trans   &trans   &trans &trans    &trans &trans
-                                                &kp LGUI     &trans       &kp SPACE      &kp RET  &trans   &kp RALT
+                /* Top row left */
+                &trans &none &none &none &none &none
+
+                /* Top row right */
+                &kp K_PASTE &kp K_COPY &kp K_CUT &kp K_UNDO &kp K_REDO &trans
+
+                /* Home row left */
+                &trans &kp LGUI &kp LALT &kp LCTRL &kp LSHFT &none
+
+                /* Home row right */
+                &kp LEFT &kp DOWN &kp UP &kp RIGHT &kp CAPS &trans
+
+                /* Bottom row left */
+                &trans &none &none &none &none &none
+
+                /* Bottom row right */
+                &kp HOME &kp PG_DN &kp PG_UP &kp END &kp INS &trans
+
+                /* Thumb row left */
+                &none &trans &none
+
+                /* Thumb row right */
+                &trans &trans &trans
             >;
         };
 
-        sym {
-            display-name = "SYM";
-            bindings = <
-                &kp TAB   &kp EXCL &kp AT &kp HASH &kp DLLR &kp PRCNT   &kp CARET &kp AMPS  &kp KP_MULTIPLY &kp LPAR &kp RPAR &kp BSPC
-                &kp LCTRL &trans   &trans &trans   &trans   &trans      &kp MINUS &kp EQUAL &kp LBKT        &kp RBKT &kp BSLH &kp GRAVE
-                &kp LSHFT &trans   &trans &trans   &trans   &trans      &kp UNDER &kp PLUS  &kp LBRC        &kp RBRC &kp PIPE &kp TILDE
-                                          &kp LGUI &trans   &kp SPACE   &kp RET   &trans    &kp RALT
-            >;
-        };
-
-        adj {
-            display-name = "ADJ";
-            bindings = <
-                &mo TAB   &trans &kp F7 &kp F8 &kp F9 &kp F12   &kp C_VOL_DN &kp C_MUTE  &kp C_VOL_UP &trans &trans &kp BSPC
-                &kp LCTRL &trans &kp F4 &kp F5 &kp F6 &kp F11   &trans       &trans      &trans       &trans &trans &trans
-                &bt LSHFT &trans &kp F1 &kp F2 &kp F3 &kp F10   &trans       &trans      &trans       &trans &trans &trans
-                                   &kp LGUI &mo NAV &kp SPACE   &kp RET &mo 2 &kp RALT
-            >;
-        };
-
+        /* Layer 2 */
         mouse {
-            display-name = "MOU";
+            display-name = "mouse";
+
             bindings = <
-                &trans &trans &trans &trans &trans &trans           &trans &trans &trans &trans &trans &trans
-                &trans &trans &trans &trans &trans &trans           &trans &trans &trans &trans &trans &trans
-                &trans &trans &trans &trans &trans &trans           &trans &trans &trans &trans &trans &trans
-                            &mkp MCLK &mkp LCLK &mkp RCLK           &mkp LCLK &mkp RCLK &mkp MCLK
+                /* Top row left */
+                &trans &none &none &none &none &none
+
+                /* Top row right */
+                &kp K_PASTE &kp K_COPY &kp K_CUT &kp K_UNDO &kp K_REDO &trans
+
+                /* Home row left */
+                &trans &kp LGUI &kp LALT &kp LCTRL &kp LSHFT &none
+
+                /* Home row right */
+                &mmv MOVE_LEFT &mmv MOVE_DOWN &mmv MOVE_UP &mmv MOVE_RIGHT &none &trans
+
+                /* Bottom row left */
+                &trans &none &none &none &none &none
+
+                /* Bottom row right */
+                &msc SCRL_LEFT &msc SCRL_DOWN &msc SCRL_UP &msc SCRL_RIGHT &none &trans
+
+                /* Thumb row left */
+                &none &none &trans
+
+                /* Thumb row right */
+                &mkp RCLK &mkp LCLK &mkp MCLK
             >;
         };
 
-        extra_2 {
-                status = "reserved";
+        /* Layer 3 */
+        media {
+            display-name = "media";
+
+            bindings = <
+                /* Top row left */
+                &trans &none &none &none &none &none
+
+                /* Top row right */
+                &none &none &none &none &none &trans
+
+                /* Home row left */
+                &trans &kp LGUI &kp LALT &kp LCTRL &kp LSHFT &none
+
+                /* Home row right */
+                &kp C_PREV &kp C_VOL_UP &kp C_VOL_DN &kp C_NEXT &none &trans
+
+                /* Bottom row left */
+                &trans &none &none &none &none &none
+
+                /* Bottom row right */
+                &bt BT_CLR &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &bt BT_SEL 3 &trans
+
+                /* Thumb row left */
+                &trans &none &none
+
+                /* Thumb row right */
+                &kp C_STOP &kp C_PP &kp C_MUTE
+            >;
         };
 
-        extra_3 {
-                status = "reserved";
+        /* Layer 4 */
+        num {
+            display-name = "num";
+
+            bindings = <
+                /* Top row left */
+                &trans &kp LBKT &kp N7 &kp N8 &kp N9 &kp RBKT
+
+                /* Top row right */
+                &none &none &none &none &none &trans
+
+                /* Home row left */
+                &trans &kp SEMI &kp N4 &kp N5 &kp N6 &kp EQUAL
+
+                /* Home row right */
+                &none &kp RSHFT &kp RCTRL &kp RALT &kp RGUI &trans
+
+                /* Bottom row left */
+                &trans &kp GRAVE &kp N1 &kp N2 &kp N3 &kp BSLH
+
+                /* Bottom row right */
+                &none &none &none &none &none &trans
+
+                /* Thumb row left */
+                &kp DOT &kp N0 &kp MINUS
+
+                /* Thumb row right */
+                &none &trans &none
+            >;
+        };
+
+        /* Layer 5 */
+        sym {
+            display-name = "sym";
+
+            bindings = <
+                /* Top row left */
+                &trans &kp LBRC &kp AMPS &kp STAR &kp LPAR &kp RBRC
+
+                /* Top row right */
+                &none &none &none &none &none &trans
+
+                /* Home row left */
+                &trans &kp COLON &kp DOLLAR &kp PERCENT &kp CARET &kp PLUS
+
+                /* Home row right */
+                &none &kp RSHFT &kp RCTRL &kp RALT &kp RGUI &trans
+
+                /* Bottom row left */
+                &trans &kp TILDE &kp EXCL &kp AT &kp HASH &kp PIPE
+
+                /* Bottom row right */
+                &none &none &none &none &none &trans
+
+                /* Thumb row left */
+                &kp LPAR &kp RPAR &kp UNDER
+
+                /* Thumb row right */
+                &trans &none &none
+            >;
+        };
+
+        /* Layer 6 */
+        fn {
+            display-name = "fn";
+
+            bindings = <
+                /* Top row left */
+                &trans &kp F12 &kp F7 &kp F8 &kp F9 &kp PSCRN
+
+                /* Top row right */
+                &none &none &none &none &none &trans
+
+                /* Home row left */
+                &trans &kp F11 &kp F4 &kp F5 &kp F6 &kp SLCK
+
+                /* Home row right */
+                &none &kp RSHFT &kp RCTRL &kp RALT &kp RGUI &trans
+
+                /* Bottom row left */
+                &trans &kp F10 &kp F1 &kp F2 &kp F3 &kp PAUSE_BREAK
+
+                /* Bottom row right */
+                &none &none &none &none &none &trans
+
+                /* Thumb row left */
+                &kp K_APP &kp SPACE &kp TAB
+
+                /* Thumb row right */
+                &none &none &trans
+            >;
         };
     };
 };
