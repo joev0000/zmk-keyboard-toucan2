@@ -44,6 +44,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 #include "screen.h"
 #include "sleep.h"
+#include "version.h"
 
 struct connection_status_state {
     bool connected;
@@ -61,6 +62,11 @@ static void draw_top(lv_obj_t *widget, lv_color_t cbuf[], const struct status_st
 
     if (is_sleep_screen_active()) {
         draw_sleep_screen(canvas);
+        return;
+    }
+
+    if (is_version_screen_active()) {
+        draw_version_screen(canvas);
         return;
     }
 
@@ -252,6 +258,19 @@ static int display_activity_event_handler(const zmk_event_t *eh) {
     return 0;
 }
 
+/**
+ * Commit hash shown at startup
+ **/
+
+#define VERSION_SCREEN_DURATION K_SECONDS(4)
+
+static void version_screen_timeout(struct k_work *work) {
+    set_version_screen_active(false);
+    force_redraw_all_widgets();
+}
+
+static K_WORK_DELAYABLE_DEFINE(version_screen_work, version_screen_timeout);
+
 ZMK_LISTENER(nice_view_gem_display, display_activity_event_handler);
 ZMK_SUBSCRIPTION(nice_view_gem_display, zmk_activity_state_changed);
 
@@ -304,6 +323,9 @@ int zmk_widget_screen_init(struct zmk_widget_screen *widget, lv_obj_t *parent) {
     #if defined(CONFIG_TOUCAN_STATUS_SCREEN) && CONFIG_TOUCAN_STATUS_SCREEN == 2
     widget_chart_status_init();
     #endif
+
+    k_work_schedule_for_queue(zmk_display_work_q(), &version_screen_work,
+                              VERSION_SCREEN_DURATION);
 
     return 0;
 }
